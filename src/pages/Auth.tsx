@@ -26,8 +26,10 @@ const Auth = () => {
         await signUp(email, password, username);
         toast({
           title: "Account created! 🎉",
-          description: "Check your email to confirm your account.",
+          description: "You can now sign in with your credentials.",
         });
+        setIsLogin(true);
+        setPassword("");
       }
     } catch (err: any) {
       toast({
