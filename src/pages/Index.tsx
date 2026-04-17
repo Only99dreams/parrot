@@ -11,35 +11,22 @@ import ThisDayInNigeria from "@/components/ThisDayInNigeria";
 import Footer from "@/components/Footer";
 import { useNewsArticles } from "@/hooks/useNews";
 import { useForYouFeed } from "@/hooks/useForYouFeed";
-import { mockNews } from "@/data/mockNews";
-import NewsCardMock from "@/components/NewsCardMock";
 
 const Index = () => {
   const { data: articles, isLoading } = useNewsArticles();
-  const hasRealData = articles && articles.length > 0;
   const [category, setCategory] = useState("");
   const [feedMode, setFeedMode] = useState<"latest" | "foryou">("latest");
-  const { forYouArticles, forYouMock, hasPreferences, topCategories } = useForYouFeed(articles, mockNews);
+  const { forYouArticles, hasPreferences, topCategories } = useForYouFeed(articles);
 
   const filtered = useMemo(() => {
-    if (!hasRealData) return [];
+    if (!articles || articles.length === 0) return [];
     const source = feedMode === "foryou" ? forYouArticles : articles;
     if (!category) return source;
     return source.filter((a) => a.category === category);
-  }, [articles, forYouArticles, category, hasRealData, feedMode]);
+  }, [articles, forYouArticles, category, feedMode]);
 
-  const filteredMock = useMemo(() => {
-    if (hasRealData) return [];
-    const source = feedMode === "foryou" ? forYouMock : mockNews;
-    if (!category) return source;
-    return source.filter((n) => n.category === category);
-  }, [hasRealData, category, feedMode, forYouMock]);
-
-  const totalVotes = hasRealData
-    ? articles.reduce((sum, a) => sum + a.total_votes, 0)
-    : mockNews.reduce((sum, n) => sum + n.totalVotes, 0);
-
-  const articleCount = hasRealData ? articles.length : mockNews.length;
+  const totalVotes = articles ? articles.reduce((sum, a) => sum + a.total_votes, 0) : 0;
+  const articleCount = articles ? articles.length : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,16 +83,12 @@ const Index = () => {
               <div className="py-12 text-center text-muted-foreground">Loading stories...</div>
             )}
 
-            {hasRealData
-              ? filtered.map((article, i) => (
-                  <NewsCard key={article.id} article={article} index={i} />
-                ))
-              : !isLoading &&
-                filteredMock.map((news, i) => (
-                  <NewsCardMock key={news.id} news={news} index={i} />
-                ))}
+            {!isLoading && filtered.length > 0 &&
+              filtered.map((article, i) => (
+                <NewsCard key={article.id} article={article} index={i} />
+              ))}
 
-            {!isLoading && hasRealData && filtered.length === 0 && category && (
+            {!isLoading && filtered.length === 0 && category && (
               <div className="rounded-xl border border-border bg-card p-8 text-center">
                 <p className="text-lg">🤷</p>
                 <p className="mt-2 text-sm text-muted-foreground">No stories in <strong>{category}</strong> yet.</p>
@@ -115,8 +98,16 @@ const Index = () => {
               </div>
             )}
 
+            {!isLoading && articleCount === 0 && !category && (
+              <div className="rounded-xl border border-border bg-card p-8 text-center">
+                <p className="text-3xl">🦜</p>
+                <p className="mt-3 font-display text-base font-bold text-foreground">No stories yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">Real Nigerian news will appear here once stories are published.</p>
+              </div>
+            )}
+
             {/* Viral CTA after 3rd article */}
-            {((hasRealData && filtered.length > 3) || (!hasRealData && !isLoading && filteredMock.length > 3)) && (
+            {filtered.length > 3 && (
               <ViralCTA />
             )}
           </div>

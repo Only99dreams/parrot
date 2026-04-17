@@ -4,13 +4,15 @@ const categories = [
   { label: "All", emoji: "🔥", value: "" },
   { label: "Politics", emoji: "🏛️", value: "Politics" },
   { label: "Economy", emoji: "💰", value: "Economy" },
-  { label: "Sports", emoji: "⚽", value: "Sports" },
+  { label: "Security", emoji: "🛡️", value: "Security" },
+  { label: "Governance", emoji: "⚖️", value: "Governance" },
   { label: "Education", emoji: "🎓", value: "Education" },
   { label: "Energy", emoji: "⛽", value: "Energy" },
-  { label: "Infrastructure", emoji: "🛣️", value: "Infrastructure" },
-  { label: "Entertainment", emoji: "🎬", value: "Entertainment" },
-  { label: "Technology", emoji: "💻", value: "Technology" },
   { label: "Health", emoji: "🏥", value: "Health" },
+  { label: "Infrastructure", emoji: "🛣️", value: "Infrastructure" },
+  { label: "Technology", emoji: "💻", value: "Technology" },
+  { label: "Environment", emoji: "🌍", value: "Environment" },
+  { label: "Sports", emoji: "⚽", value: "Sports" },
 ];
 
 interface CategoryFilterProps {

@@ -12,9 +12,11 @@ const NIGERIAN_SOURCES = [
   { url: "https://guardian.ng", name: "The Guardian" },
   { url: "https://www.premiumtimesng.com", name: "Premium Times" },
   { url: "https://www.thecable.ng", name: "The Cable" },
-  { url: "https://www.completesports.com", name: "Complete Sports" },
-  { url: "https://www.brila.net", name: "Brila FM" },
-  { url: "https://www.goal.com/en-ng", name: "Goal Nigeria" },
+  { url: "https://www.channelstv.com", name: "Channels TV" },
+  { url: "https://dailypost.ng", name: "Daily Post" },
+  { url: "https://saharareporters.com", name: "Sahara Reporters" },
+  { url: "https://www.thisdaylive.com", name: "ThisDay" },
+  { url: "https://businessday.ng", name: "BusinessDay" },
 ];
 
 serve(async (req) => {
@@ -65,7 +67,11 @@ serve(async (req) => {
     }
 
     // Step 2: Use AI to transform news content
-    const aiPrompt = `You are a Nigerian news analyst for "ParrotNG". From this raw news content, extract the TOP 3 most important/interesting stories and transform each into our format.
+    const aiPrompt = `You are a Nigerian news analyst for "ParrotNG". From this raw news content, extract the TOP 3 most important and SERIOUS stories and transform each into our format.
+
+PRIORITY: Focus on stories that directly affect everyday Nigerians — politics, economy, security, governance, corruption, infrastructure, health, education, energy/fuel, cost of living, and national debates. These are the issues Nigerians care about most.
+
+AVOID: Do NOT pick sports, celebrity gossip, entertainment, or trivial stories unless there is absolutely nothing else. Nigerian users come here for SERIOUS trending issues.
 
 RAW CONTENT:
 ${rawContent.substring(0, 4000)}
@@ -78,7 +84,7 @@ For EACH story, return a JSON array with objects containing:
 - poll_options: Array of 3 options with emoji (e.g. ["Yes! Na good start! 💪", "No, e no reach 😤", "Make dem try harder 🤔"])
 - debate_hook: A provocative question to spark debate
 - perspectives: Array of 3 objects with "label" and "text" showing different viewpoints
-- category: One of Economy, Education, Energy, Infrastructure, Sports, Politics, Entertainment, Technology, Health
+- category: One of Politics, Economy, Security, Education, Energy, Infrastructure, Health, Technology, Governance, Environment (use Sports or Entertainment ONLY if the story has real national significance)
 
 CRITICAL: Return ONLY valid JSON array. No markdown. No explanation. Just the JSON array.`;
 

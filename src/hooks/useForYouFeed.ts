@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useReadingHistory } from "@/hooks/useReadingHistory";
 import { type NewsArticle } from "@/hooks/useNews";
-import { type NewsItem } from "@/data/mockNews";
 
-export function useForYouFeed(articles: NewsArticle[] | undefined, mockNews: NewsItem[]) {
+export function useForYouFeed(articles: NewsArticle[] | undefined) {
   const { topCategories, totalRead } = useReadingHistory();
 
   const forYouArticles = useMemo(() => {
@@ -31,28 +30,8 @@ export function useForYouFeed(articles: NewsArticle[] | undefined, mockNews: New
     return scored.map((s) => s.article);
   }, [articles, topCategories]);
 
-  const forYouMock = useMemo(() => {
-    if (articles && articles.length > 0) return [];
-    if (topCategories.length === 0) return mockNews;
-
-    const scored = mockNews.map((news) => {
-      let score = 0;
-      const catIndex = topCategories.indexOf(news.category);
-      if (catIndex !== -1) {
-        score += (topCategories.length - catIndex) * 10;
-      }
-      if (news.isTrending) score += 15;
-      if (news.totalVotes > 100) score += 5;
-      return { news, score };
-    });
-
-    scored.sort((a, b) => b.score - a.score);
-    return scored.map((s) => s.news);
-  }, [mockNews, topCategories, articles]);
-
   return {
     forYouArticles,
-    forYouMock,
     hasPreferences: topCategories.length > 0,
     topCategories: topCategories.slice(0, 3),
     totalRead,

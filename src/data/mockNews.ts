@@ -114,26 +114,26 @@ export const mockNews: NewsItem[] = [
   },
   {
     id: "5",
-    headline: "Super Eagles New Coach: Can Jose Peseiro Successor Take Us to World Cup?",
-    summary: "NFF don appoint new Super Eagles coach with mandate to qualify Nigeria for 2026 World Cup. Fans dey hopeful but skeptical based on past experience.",
-    whyItMatters: "Nigeria missed the 2022 World Cup qualification. With 2026 expanded format, there's more hope but the team needs serious rebuilding.",
-    pollQuestion: "Super Eagles go make 2026 World Cup?",
+    headline: "Kidnapping Wahala: Bandits Collect ₦500M Ransom This Year Alone — Who Dey Protect Us?",
+    summary: "Kidnapping for ransom don become big business for Nigeria. Security agencies say dem dey try, but citizens feel say government no dey do enough to protect dem.",
+    whyItMatters: "Over 3,000 Nigerians have been kidnapped in the last 12 months. The insecurity is crippling farming, travel, and education in the North and spreading to the South.",
+    pollQuestion: "Wetin go stop kidnapping for Nigeria?",
     pollOptions: [
-      { id: "5a", text: "Yes! This time na our time! ⚽", votes: 5670 },
-      { id: "5b", text: "With this NFF? No way 😂", votes: 4320 },
-      { id: "5c", text: "Only if we fix the system 🔧", votes: 3100 },
+      { id: "5a", text: "State police! Each state protect their own 🛡️", votes: 6870 },
+      { id: "5b", text: "Death penalty for kidnappers ⚖️", votes: 5320 },
+      { id: "5c", text: "Fix poverty first — na hunger cause am 🤔", votes: 4100 },
     ],
-    debateHook: "Should Nigeria invest in grassroot football or keep importing diaspora players?",
+    debateHook: "Should Nigeria create state police or is the real problem corruption inside the security agencies?",
     perspectives: [
-      { label: "Fans", text: "We get talent, we just need proper management. Stop the corruption!" },
-      { label: "Former Players", text: "The local league is dead. How you wan build national team without strong foundation?" },
-      { label: "NFF", text: "We have a comprehensive plan. Give us time and support." },
+      { label: "Citizens", text: "We dey pay tax but government no fit protect us. We dey on our own." },
+      { label: "Security Experts", text: "Centralized policing has failed. We need community-based security and intelligence sharing." },
+      { label: "Government", text: "Security is improving. We have deployed more troops and technology to affected areas." },
     ],
-    category: "Sports",
-    source: "Complete Sports",
-    timeAgo: "10h ago",
-    totalVotes: 13090,
-    commentCount: 891,
+    category: "Security",
+    source: "Premium Times",
+    timeAgo: "3h ago",
+    totalVotes: 16290,
+    commentCount: 1891,
     isTrending: true,
   },
   {
@@ -181,12 +181,14 @@ export const mockComments: Comment[] = [
 ];
 
 export const trendingTopics = [
-  { tag: "#MinimumWage", posts: "12.4K posts" },
-  { tag: "#NairaWatch", posts: "8.9K posts" },
-  { tag: "#ASUUStrike", posts: "6.2K posts" },
-  { tag: "#DangoteRefinery", posts: "5.8K posts" },
-  { tag: "#SuperEagles", posts: "4.1K posts" },
-  { tag: "#LagosTraffic", posts: "3.5K posts" },
+  { tag: "#NairaWatch", posts: "14.2K posts" },
+  { tag: "#InsecurityInNigeria", posts: "11.8K posts" },
+  { tag: "#MinimumWage", posts: "9.4K posts" },
+  { tag: "#ASUUStrike", posts: "7.2K posts" },
+  { tag: "#DangoteRefinery", posts: "6.8K posts" },
+  { tag: "#CostOfLiving", posts: "5.5K posts" },
+  { tag: "#PowerSupply", posts: "4.3K posts" },
+  { tag: "#CorruptionWatch", posts: "3.9K posts" },
 ];
 
 export const leaderboard = [

@@ -1,13 +1,10 @@
 import { Flame, Trophy } from "lucide-react";
 import { useLeaderboard, useTrendingArticles } from "@/hooks/useNews";
-import { trendingTopics } from "@/data/mockNews";
 import { Link } from "react-router-dom";
 
 const TrendingSidebar = () => {
   const { data: leaders = [] } = useLeaderboard();
   const { data: trendingArticles = [] } = useTrendingArticles();
-
-  const hasRealTrending = trendingArticles.length > 0;
 
   const badges = ["🏆", "🥈", "🥉", "⭐", "⭐"];
 
@@ -18,7 +15,7 @@ const TrendingSidebar = () => {
           <Flame className="h-4 w-4 text-naija-orange" /> Trending Now
         </h3>
         <div className="space-y-3">
-          {hasRealTrending
+          {trendingArticles.length > 0
             ? trendingArticles.map((article, i) => (
                 <Link to={`/news/${article.id}`} key={article.id} className="flex items-start gap-3 group">
                   <span className="mt-0.5 text-xs font-bold text-muted-foreground">{i + 1}</span>
@@ -32,15 +29,9 @@ const TrendingSidebar = () => {
                   </div>
                 </Link>
               ))
-            : trendingTopics.map((topic, i) => (
-                <div key={topic.tag} className="flex items-start gap-3">
-                  <span className="mt-0.5 text-xs font-bold text-muted-foreground">{i + 1}</span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground hover:text-primary cursor-pointer transition-colors">{topic.tag}</p>
-                    <p className="text-xs text-muted-foreground">{topic.posts}</p>
-                  </div>
-                </div>
-              ))}
+            : (
+                <p className="text-xs text-muted-foreground">No trending stories yet. Check back soon! 🇳🇬</p>
+              )}
         </div>
       </div>
 
