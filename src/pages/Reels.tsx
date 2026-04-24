@@ -79,7 +79,7 @@ function ReelItem({
   isActive: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [liked, setLiked] = useState(false);
 
@@ -105,14 +105,33 @@ function ReelItem({
 
   useEffect(() => {
     if (!videoRef.current || !isDirectVideo) return;
+    videoRef.current.muted = muted;
+  }, [muted, isDirectVideo]);
+
+  useEffect(() => {
+    if (!videoRef.current || !isDirectVideo) return;
     if (isActive) {
-      videoRef.current.play().catch(() => {});
-      setPlaying(true);
+      videoRef.current.muted = muted;
+      videoRef.current
+        .play()
+        .then(() => setPlaying(true))
+        .catch(async () => {
+          // Autoplay can be blocked when unmuted. Fallback to muted autoplay.
+          if (!videoRef.current) return;
+          videoRef.current.muted = true;
+          setMuted(true);
+          try {
+            await videoRef.current.play();
+            setPlaying(true);
+          } catch {
+            setPlaying(false);
+          }
+        });
     } else {
       videoRef.current.pause();
       setPlaying(false);
     }
-  }, [isActive, isDirectVideo]);
+  }, [isActive, isDirectVideo, muted]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -138,17 +157,25 @@ function ReelItem({
           className="absolute inset-0 h-full w-full object-cover"
           onClick={togglePlay}
         />
-      ) : ytId ? (
+      ) : ytId && isActive ? (
         <iframe
-          key={`yt-${ytId}-${isActive}`}
-          src={`https://www.youtube.com/embed/${ytId}?autoplay=${
-            isActive ? 1 : 0
-          }&loop=1&playlist=${ytId}&rel=0&modestbranding=1&mute=1&playsinline=1`}
+          key={`yt-${ytId}-active`}
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}&rel=0&modestbranding=1&mute=0&playsinline=1`}
           title={title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           className="absolute inset-0 h-full w-full border-0"
         />
+      ) : ytId ? (
+        <div className="absolute inset-0 h-full w-full bg-black">
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt={title}
+              className="h-full w-full object-cover opacity-80"
+            />
+          ) : null}
+        </div>
       ) : thumbnailUrl ? (
         <img
           src={thumbnailUrl}

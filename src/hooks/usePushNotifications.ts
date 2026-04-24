@@ -29,13 +29,33 @@ export function usePushNotifications() {
     if (supported) {
       setPermission(Notification.permission);
       // Check existing subscription
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.pushManager.getSubscription().then((sub) => {
-          setIsSubscribed(!!sub);
-        });
-      });
+      (async () => {
+        try {
+          await navigator.serviceWorker.register("/sw.js");
+        } catch {
+          // noop: registration may already be managed by vite-plugin-pwa
+        }
+
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setIsSubscribed(!!sub);
+
+        // If the user logs in after permission was granted, keep DB subscription in sync.
+        if (user && sub) {
+          const subJson = sub.toJSON();
+          await supabase.from("push_subscriptions").upsert(
+            {
+              user_id: user.id,
+              endpoint: subJson.endpoint!,
+              p256dh: subJson.keys?.p256dh || "",
+              auth: subJson.keys?.auth || "",
+            },
+            { onConflict: "endpoint" }
+          );
+        }
+      })();
     }
-  }, []);
+  }, [user?.id]);
 
   const subscribe = useCallback(async () => {
     if (!isSupported || !VAPID_PUBLIC_KEY) return false;
@@ -45,6 +65,12 @@ export function usePushNotifications() {
       setPermission(perm);
 
       if (perm !== "granted") return false;
+
+      try {
+        await navigator.serviceWorker.register("/sw.js");
+      } catch {
+        // noop
+      }
 
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
