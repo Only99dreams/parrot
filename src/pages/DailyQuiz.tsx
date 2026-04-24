@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
 
 const DailyQuiz = () => {
-  const { questions, answers, score, completed, totalQuizzesTaken, bestScore, answer } = useDailyQuiz();
+  const { questions, answers, score, completed, totalQuizzesTaken, bestScore, loading, answer } = useDailyQuiz();
   const { currentStreak } = useStreak();
   const { toast } = useToast();
   const [currentQ, setCurrentQ] = useState(0);
@@ -83,6 +83,13 @@ const DailyQuiz = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto max-w-2xl px-3 sm:px-4 py-4 sm:py-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Brain className="h-10 w-10 text-primary animate-pulse" />
+            <p className="text-sm text-muted-foreground">Loading today's questions…</p>
+          </div>
+        ) : (
+        <>
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
@@ -318,6 +325,8 @@ const DailyQuiz = () => {
             </div>
           </div>
         ) : null}
+        </>
+        )}
       </main>
       <Footer />
     </div>

@@ -15,6 +15,9 @@ import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Trending from "./pages/Trending.tsx";
 import DailyQuiz from "./pages/DailyQuiz.tsx";
+import Reels from "./pages/Reels.tsx";
+import CommunityFeed from "./pages/CommunityFeed.tsx";
+import InstallAppPrompt from "@/components/InstallAppPrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +36,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <InstallAppPrompt />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/news/:id" element={<NewsDetail />} />
@@ -40,9 +44,12 @@ const App = () => (
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/trending" element={<Trending />} />
             <Route path="/quiz" element={<DailyQuiz />} />
+            <Route path="/reels" element={<Reels />} />
+            <Route path="/community" element={<CommunityFeed />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/reels" element={<Reels />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

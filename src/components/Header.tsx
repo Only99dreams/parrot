@@ -1,16 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
-import { TrendingUp, MessageSquare, BarChart3, Menu, X, LogIn, LogOut, User, Flame, Sun, Moon, Brain } from "lucide-react";
+import { TrendingUp, MessageSquare, BarChart3, Menu, X, LogIn, LogOut, User, Flame, Sun, Moon, Brain, Clapperboard, Users } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import NotificationBell from "./NotificationBell";
+import CreatePost from "./CreatePost";
 
 const navItems = [
   { to: "/", label: "Feed", icon: TrendingUp },
   { to: "/trending", label: "Trending", icon: Flame },
   { to: "/nigeria-thinks", label: "Nigeria Thinks", icon: BarChart3 },
   { to: "/quiz", label: "Quiz", icon: Brain },
+  { to: "/reels", label: "Reels", icon: Clapperboard },
+  { to: "/community", label: "Community", icon: Users },
   { to: "/leaderboard", label: "Leaderboard", icon: MessageSquare },
 ];
 
@@ -60,6 +63,7 @@ const Header = () => {
           {user && <NotificationBell />}
           {user ? (
             <div className="flex items-center gap-1">
+              <CreatePost />
               <Link
                 to="/profile"
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -92,6 +96,11 @@ const Header = () => {
 
       {mobileOpen && (
         <nav className="border-t border-border px-4 py-2 md:hidden">
+          {user && (
+            <div className="px-3 py-2">
+              <CreatePost />
+            </div>
+          )}
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;

@@ -1,6 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const QUIZ_KEY = "parrotng-quiz";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface QuizQuestion {
   id: string;
@@ -21,14 +25,18 @@ interface QuizState {
 }
 
 function getToday(): string {
-  return new Date().toISOString().split("T")[0];
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+  }).format(new Date());
 }
 
 function loadQuizState(): QuizState {
   try {
     const raw = localStorage.getItem(QUIZ_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // Ignore corrupt local cache and rebuild quiz state.
+  }
   return {
     date: "",
     answers: {},
@@ -213,7 +221,7 @@ const questionBank: QuizQuestion[] = [
 ];
 
 function getDailyQuestions(date: string): QuizQuestion[] {
-  // Use date as seed to pick 5 questions deterministically
+  // Fallback: use date as seed to pick 5 questions deterministically from local bank
   let hash = 0;
   for (let i = 0; i < date.length; i++) {
     hash = ((hash << 5) - hash + date.charCodeAt(i)) | 0;
@@ -226,13 +234,77 @@ function getDailyQuestions(date: string): QuizQuestion[] {
   return shuffled.slice(0, 5);
 }
 
+async function fetchDailyQuestions(date: string): Promise<QuizQuestion[] | null> {
+  try {
+    if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+
+    const url = `${SUPABASE_URL}/rest/v1/daily_quiz_questions?quiz_date=eq.${date}&order=question_number.asc`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length < 5) return null;
+
+    return data.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      question: row.question as string,
+      options: row.options as string[],
+      correctIndex: row.correct_index as number,
+      category: row.category as string,
+      explanation: row.explanation as string,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+async function fetchOrGenerateDailyQuestions(date: string): Promise<QuizQuestion[] | null> {
+  const existing = await fetchDailyQuestions(date);
+  if (existing && existing.length === 5) return existing;
+
+  try {
+    const { error } = await supabase.functions.invoke("generate-quiz", {
+      body: { date },
+    });
+    if (error) return existing;
+
+    return await fetchDailyQuestions(date);
+  } catch {
+    return existing;
+  }
+}
+
 export function useDailyQuiz() {
   const [state, setState] = useState<QuizState>(loadQuizState);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
   const today = getToday();
 
-  const questions = useMemo(() => getDailyQuestions(today), [today]);
-
   const isToday = state.date === today;
+
+  // Fetch today's questions, and ask the backend to generate them if missing.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    fetchOrGenerateDailyQuestions(today).then((dbQuestions) => {
+      if (cancelled) return;
+      if (dbQuestions && dbQuestions.length === 5) {
+        setQuestions(dbQuestions);
+      } else {
+        setQuestions(getDailyQuestions(today));
+      }
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [today]);
 
   useEffect(() => {
     if (!isToday) {
@@ -247,6 +319,7 @@ export function useDailyQuiz() {
       saveQuizState(fresh);
       setState(fresh);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today, isToday]);
 
   const answer = (questionId: string, optionIndex: number) => {
@@ -280,6 +353,7 @@ export function useDailyQuiz() {
     completed: isToday ? state.completed : false,
     totalQuizzesTaken: state.totalQuizzesTaken,
     bestScore: state.bestScore,
+    loading,
     answer,
   };
 }

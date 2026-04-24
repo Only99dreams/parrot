@@ -1,0 +1,26 @@
+{
+  "name": "ParrotNG — What Nigerians Really Think",
+  "short_name": "ParrotNG",
+  "description": "Vote, debate, and discover what millions of Nigerians really think about the issues that matter.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/newlogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/newlogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["news", "social"],
+  "lang": "en-NG"
+}

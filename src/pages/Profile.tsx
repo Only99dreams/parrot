@@ -2,6 +2,8 @@ import { Navigate, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import PostCard, { UserPost } from "@/components/PostCard";
 import {
   useUserProfile,
   useUpdateProfile,
@@ -16,8 +18,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, Vote, Award, Star, Pencil, Check, X, Flame, BookOpen } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -34,6 +39,35 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
+  const [myPosts, setMyPosts] = useState<UserPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadMyPosts = async () => {
+      setPostsLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token ?? SUPABASE_KEY;
+
+        const url = new URL(`${SUPABASE_URL}/rest/v1/user_posts`);
+        url.searchParams.set("select", "*");
+        url.searchParams.set("user_id", `eq.${user.id}`);
+        url.searchParams.set("is_published", "eq.true");
+        url.searchParams.set("order", "created_at.desc");
+        url.searchParams.set("limit", "50");
+
+        const res = await fetch(url.toString(), {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+        });
+        const data: UserPost[] = res.ok ? await res.json() : [];
+        setMyPosts(data.map((p) => ({ ...p, profiles: undefined })));
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+    loadMyPosts();
+  }, [user]);
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -224,12 +258,37 @@ const Profile = () => {
         </div>
 
         {/* Activity Tabs */}
-        <Tabs defaultValue="votes">
+        <Tabs defaultValue="posts">
           <TabsList className="mb-4">
+            <TabsTrigger value="posts">My Posts</TabsTrigger>
             <TabsTrigger value="votes">Vote History</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
             <TabsTrigger value="reading">Reading History</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="posts">
+            {postsLoading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Loading posts…</p>
+            ) : myPosts.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">You haven't posted anything yet. Create your first post!</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {myPosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={{
+                      ...post,
+                      profiles: {
+                        username: profile?.username ?? null,
+                        display_name: profile?.display_name ?? null,
+                        avatar_url: (profile as unknown as { avatar_url?: string })?.avatar_url ?? null,
+                      },
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="votes">
             <div className="space-y-2">

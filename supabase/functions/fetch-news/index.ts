@@ -174,6 +174,30 @@ CRITICAL: Return ONLY valid JSON array. No markdown. No explanation. Just the JS
       insertedArticles.push(article);
     }
 
+    // Send push notification for new trending articles
+    if (insertedArticles.length > 0) {
+      const trending = insertedArticles.find((a) => a.is_trending) || insertedArticles[0];
+      try {
+        const pushUrl = `${supabaseUrl}/functions/v1/send-push`;
+        await fetch(pushUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: `🔥 ${trending.category}: Trending Now`,
+            message: trending.headline,
+            url: `/news/${trending.id}`,
+            tag: "trending-news",
+            topic: "trending_news",
+          }),
+        });
+      } catch (pushErr) {
+        console.error("Push notification failed (non-blocking):", pushErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

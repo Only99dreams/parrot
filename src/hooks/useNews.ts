@@ -2,6 +2,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+function scoreTrendingArticle(article: {
+  created_at: string;
+  total_votes: number;
+  comment_count: number;
+  is_trending: boolean;
+}) {
+  const hoursOld = Math.max(
+    1,
+    (Date.now() - new Date(article.created_at).getTime()) / 36e5,
+  );
+  const recencyBoost = Math.max(0, 72 - hoursOld);
+  const engagementScore = article.total_votes + article.comment_count * 4;
+  const flagBoost = article.is_trending ? 200 : 0;
+
+  return flagBoost + engagementScore + recencyBoost;
+}
+
 export interface NewsArticle {
   id: string;
   headline: string;
@@ -204,13 +221,18 @@ export function useTrendingArticles() {
   return useQuery({
     queryKey: ["trending_articles"],
     queryFn: async () => {
+      const recentThreshold = new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString();
       const { data, error } = await supabase
         .from("news_articles")
-        .select("id, headline, category, total_votes, comment_count, is_trending")
-        .order("total_votes", { ascending: false })
-        .limit(6);
+        .select("id, headline, category, total_votes, comment_count, is_trending, created_at")
+        .or(`is_trending.eq.true,created_at.gte.${recentThreshold}`)
+        .order("created_at", { ascending: false })
+        .limit(24);
       if (error) throw error;
-      return data || [];
+
+      return (data || [])
+        .sort((left, right) => scoreTrendingArticle(right) - scoreTrendingArticle(left))
+        .slice(0, 6);
     },
   });
 }
