@@ -262,6 +262,8 @@ export default function Reels() {
   const [fetching, setFetching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Prevent multiple simultaneous auto-fetches
+  const autoFetchInProgress = useRef(false);
 
   const reelInterests = topCategories
     .map((c) => INTEREST_MAP[c] ?? c)
@@ -276,14 +278,23 @@ export default function Reels() {
     url.searchParams.set("order", "fetched_at.desc");
     url.searchParams.set("limit", "24");
 
-    const cat = category === "For You" ? (reelInterests[0] ?? "Entertainment") : category;
-    url.searchParams.set("category", `eq.${cat}`);
+    // Query using the exact category label — the edge function stores reels
+    // with the category name as-is ("For You", "Sports", etc.)
+    url.searchParams.set("category", `eq.${category}`);
 
     const res = await fetch(url.toString(), {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
     });
     const data: AIReel[] = res.ok ? await res.json() : [];
+
+    // Check freshness: treat as stale if empty OR newest reel is older than 1 hour
+    const isStale =
+      data.length === 0 ||
+      (data[0]?.fetched_at &&
+        Date.now() - new Date(data[0].fetched_at).getTime() > 60 * 60 * 1000);
+
     setAiReels(data);
+    return { data, isStale };
   };
 
   const loadUserReels = async () => {
@@ -336,11 +347,17 @@ export default function Reels() {
     setLoading(true);
     setActiveIndex(0);
     containerRef.current?.scrollTo({ top: 0 });
-    await Promise.all([loadAIReels(category), loadUserReels()]);
+    const [{ isStale }] = await Promise.all([loadAIReels(category), loadUserReels()]);
     setLoading(false);
+    // Automatically fetch fresh reels if data is empty or older than 2 hours
+    if (isStale) {
+      fetchFreshReels();
+    }
   };
 
   const fetchFreshReels = async () => {
+    if (autoFetchInProgress.current) return;
+    autoFetchInProgress.current = true;
     setFetching(true);
     try {
       await supabase.functions.invoke("fetch-reels", {
@@ -349,6 +366,7 @@ export default function Reels() {
       await loadAIReels(activeCategory);
     } finally {
       setFetching(false);
+      autoFetchInProgress.current = false;
     }
   };
 
@@ -367,6 +385,14 @@ export default function Reels() {
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [loading]);
+
+  // When user is within 3 reels of the end, automatically fetch more fresh content
+  useEffect(() => {
+    if (feed.length > 0 && activeIndex >= feed.length - 3 && !fetching) {
+      fetchFreshReels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex]);
 
   const scrollTo = (idx: number) => {
     const el = containerRef.current;

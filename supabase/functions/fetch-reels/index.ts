@@ -12,16 +12,16 @@ const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Category-to-topic map for broad, non-country-locked reel discovery.
+// Category-to-topic map — Nigeria-focused queries for relatable content.
 const QUERY_MAP: Record<string, string> = {
-  "For You": "trending reels",
-  Politics: "world politics analysis",
-  Entertainment: "music dance entertainment",
-  Sports: "sports highlights",
-  Tech: "technology innovation",
-  Business: "business finance entrepreneurship",
-  Comedy: "funny comedy skits",
-  Lifestyle: "lifestyle travel food",
+  "For You": "Nigeria trending videos 2025",
+  Politics: "Nigeria politics news 2025",
+  Entertainment: "Afrobeats Nollywood Nigerian entertainment",
+  Sports: "Nigeria football AFCON Super Eagles highlights",
+  Tech: "Nigerian tech startups Africa innovation",
+  Business: "Nigeria business economy entrepreneurship",
+  Comedy: "Nigerian comedy skits funny naija",
+  Lifestyle: "Nigeria lifestyle food culture Naija",
 };
 
 interface YouTubeItem {
@@ -56,30 +56,57 @@ interface PexelsVideo {
 
 function pickSearchQuery(category: string, interests: string[]) {
   if (category === "For You" && interests.length > 0) {
-    return `${interests.slice(0, 3).join(" ")} reels short videos`;
+    return `Nigeria ${interests.slice(0, 2).join(" ")} short videos`;
   }
-  return QUERY_MAP[category] ?? `${category} reels short videos`;
+  return QUERY_MAP[category] ?? `Nigeria ${category} short videos`;
 }
 
 function mapInterestTags(category: string, interests: string[]) {
   const base = category === "For You" ? interests : [category, ...interests.slice(0, 2)];
-  return base.filter(Boolean).slice(0, 5);
+  return ["Nigeria", "Naija", ...base].filter(Boolean).slice(0, 6);
 }
 
 function buildSearchQueries(category: string, interests: string[]) {
   const base = pickSearchQuery(category, interests);
-  const fallbackByCategory: Record<string, string[]> = {
-    "For You": ["viral short videos", "trending short clips"],
-    Politics: ["political debate clips", "policy explainer short videos"],
-    Entertainment: ["music performance short videos", "celebrity entertainment clips"],
-    Sports: ["sports highlights short videos", "football basketball highlights reels"],
-    Tech: ["technology gadget short videos", "ai innovation clips"],
-    Business: ["business finance short videos", "startup entrepreneurship clips"],
-    Comedy: ["funny skits short videos", "standup comedy clips"],
-    Lifestyle: ["travel food lifestyle short videos", "wellness lifestyle reels"],
+  const fallbackByCategory: Record<string, string[][]> = {
+    "For You": [
+      ["Naija viral videos 2025", "Nigeria trending reels", "Nigeria funny moments"],
+      ["Nigeria top videos 2025", "Naija short clips", "Nigeria social media viral"],
+    ],
+    Politics: [
+      ["Nigeria government news 2025", "Tinubu Nigeria politics clips"],
+      ["Nigeria National Assembly politics", "Nigeria state government news"],
+    ],
+    Entertainment: [
+      ["Afrobeats music video 2025", "Nollywood movie clips Nigerian"],
+      ["Burna Boy Wizkid Davido 2025", "Nigerian music new release"],
+    ],
+    Sports: [
+      ["Super Eagles Nigeria football 2025", "AFCON Nigeria highlights"],
+      ["Nigerian Premier League goals", "Nigeria sports highlights 2025"],
+    ],
+    Tech: [
+      ["Nigerian tech startup 2025", "Africa fintech innovation Nigeria"],
+      ["Nigeria Silicon Lagoon startup", "Paystack Flutterwave Africa tech"],
+    ],
+    Business: [
+      ["Nigeria economy business 2025", "Naija entrepreneur hustle"],
+      ["Lagos business market Nigeria", "Nigeria investment opportunities"],
+    ],
+    Comedy: [
+      ["Nigerian comedy skits 2025", "Naija funny skits Mr Macaroni"],
+      ["Nigeria comedian skit makers", "Naija funny video clips"],
+    ],
+    Lifestyle: [
+      ["Nigeria food culture lifestyle", "Lagos life vlog Nigeria"],
+      ["Nigerian wedding fashion 2025", "Naija street food culture"],
+    ],
   };
 
-  const queries = [base, ...(fallbackByCategory[category] ?? []), `${category} short videos`];
+  // Pick a random fallback variant so each fetch returns different queries
+  const variants = fallbackByCategory[category] ?? [[]];
+  const chosenVariant = variants[Math.floor(Math.random() * variants.length)];
+  const queries = [base, ...chosenVariant, `Nigeria ${category} short videos`];
   return [...new Set(queries.filter(Boolean))].slice(0, 4);
 }
 
@@ -113,6 +140,13 @@ serve(async (req: Request) => {
       );
     }
 
+    // Always purge all reels for this category before inserting fresh ones.
+    // This guarantees every fetch call delivers new/different videos.
+    await supabase
+      .from("ai_reels")
+      .delete()
+      .eq("category", category);
+
     let pexelsInserted = 0;
     let youtubeInserted = 0;
     const sourceErrors: string[] = [];
@@ -125,9 +159,13 @@ serve(async (req: Request) => {
         for (const q of queries) {
           if (byVideoUrl.size >= limit) break;
 
+          // Random page (1–5) so repeated fetches return different videos
+          const randomPage = Math.floor(Math.random() * 5) + 1;
+
           const pexelsUrl = new URL("https://api.pexels.com/videos/search");
           pexelsUrl.searchParams.set("query", q);
           pexelsUrl.searchParams.set("per_page", String(Math.min(limit, 20)));
+          pexelsUrl.searchParams.set("page", String(randomPage));
           pexelsUrl.searchParams.set("orientation", "portrait");
 
           const pexelsRes = await fetch(pexelsUrl.toString(), {
@@ -149,7 +187,7 @@ serve(async (req: Request) => {
               video_url: file.link,
               downloadable_url: file.link,
               thumbnail_url: video.image ?? null,
-              description: `Discover ${category.toLowerCase()} clips selected for you.`,
+              description: `Nigerian ${category.toLowerCase()} content — discover the best of Naija.`,
               source: "Pexels",
               source_url: video.url ?? null,
               channel_name: video.user?.name ?? "Pexels Creator",
@@ -165,7 +203,7 @@ serve(async (req: Request) => {
         if (reels.length > 0) {
           const { error: upsertError } = await supabase
             .from("ai_reels")
-            .upsert(reels, { onConflict: "video_url", ignoreDuplicates: true });
+            .upsert(reels, { onConflict: "video_url" });
 
           if (upsertError) {
             sourceErrors.push(`pexels_upsert: ${upsertError.message}`);
@@ -183,6 +221,9 @@ serve(async (req: Request) => {
       try {
         const byVideoUrl = new Map<string, Record<string, unknown>>();
 
+        // publishedAfter = 30 days ago — ensures truly recent content
+        const publishedAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
         for (const q of queries) {
           if (byVideoUrl.size >= limit) break;
 
@@ -191,9 +232,11 @@ serve(async (req: Request) => {
           ytUrl.searchParams.set("q", q);
           ytUrl.searchParams.set("type", "video");
           ytUrl.searchParams.set("maxResults", String(Math.min(limit, 20)));
-          ytUrl.searchParams.set("order", "relevance");
+          ytUrl.searchParams.set("order", "date");
           ytUrl.searchParams.set("videoDuration", "short");
           ytUrl.searchParams.set("relevanceLanguage", "en");
+          ytUrl.searchParams.set("regionCode", "NG");
+          ytUrl.searchParams.set("publishedAfter", publishedAfter);
           ytUrl.searchParams.set("key", YOUTUBE_API_KEY);
 
           const ytRes = await fetch(ytUrl.toString());
@@ -227,7 +270,7 @@ serve(async (req: Request) => {
         if (reels.length > 0) {
           const { error: upsertError } = await supabase
             .from("ai_reels")
-            .upsert(reels, { onConflict: "video_url", ignoreDuplicates: true });
+            .upsert(reels, { onConflict: "video_url" });
 
           if (upsertError) {
             sourceErrors.push(`youtube_upsert: ${upsertError.message}`);
