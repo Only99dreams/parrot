@@ -17,7 +17,7 @@ import { useReadingHistory } from "@/hooks/useReadingHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Vote, Award, Star, Pencil, Check, X, Flame, BookOpen } from "lucide-react";
+import { MessageSquare, Vote, Award, Star, Pencil, Check, X, Flame, BookOpen, Banknote, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -229,6 +229,43 @@ const Profile = () => {
               ))}
             </div>
           )}
+
+          {/* Creator Studio CTA */}
+          {(() => {
+            const pts = profile?.points ?? 0;
+            const THRESHOLD = 5_000_000;
+            const isEligible = pts >= THRESHOLD;
+            const progressPct = Math.min((pts / THRESHOLD) * 100, 100);
+            return (
+              <Link
+                to="/creator-studio"
+                className={`mt-3 flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
+                  isEligible
+                    ? "border-naija-gold bg-yellow-50 dark:bg-yellow-900/20"
+                    : "border-border bg-muted/30"
+                }`}
+              >
+                <Banknote className={`h-5 w-5 flex-shrink-0 ${isEligible ? "text-naija-gold" : "text-muted-foreground"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-1">
+                    Creator Studio
+                    {isEligible && <span className="rounded-full bg-naija-gold px-1.5 py-0.5 text-[9px] text-black font-bold">ELIGIBLE</span>}
+                  </p>
+                  {isEligible ? (
+                    <p className="text-[10px] text-muted-foreground">You can request a payout — ₦{Math.floor(pts / 1000).toLocaleString()} available</p>
+                  ) : (
+                    <div>
+                      <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">{pts.toLocaleString()} / {THRESHOLD.toLocaleString()} pts to unlock</p>
+                    </div>
+                  )}
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </Link>
+            );
+          })()}
         </div>
 
         {/* Badges */}

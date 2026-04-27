@@ -1,8 +1,10 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Trophy } from "lucide-react";
+import { Trophy, Banknote } from "lucide-react";
 import { useLeaderboard } from "@/hooks/useNews";
+import { Link } from "react-router-dom";
 
+const CREATOR_THRESHOLD = 5_000_000;
 const badges = ["🏆", "🥈", "🥉", "⭐", "⭐", "⭐", "⭐", "⭐", "⭐", "⭐"];
 
 const Leaderboard = () => {
@@ -19,6 +21,12 @@ const Leaderboard = () => {
           <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-foreground/80">
             The most active voices shaping Nigeria's conversation. Comment, vote, and climb the ranks!
           </p>
+          <Link
+            to="/creator-studio"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-naija-gold/90 px-3 py-1.5 text-xs font-bold text-black hover:bg-naija-gold transition-colors"
+          >
+            <Banknote className="h-3.5 w-3.5" /> Reach 5M points → Get paid
+          </Link>
         </div>
 
         {isLoading && <p className="text-center text-muted-foreground py-12">Loading...</p>}
@@ -45,6 +53,11 @@ const Leaderboard = () => {
                   <p className="font-display text-xs sm:text-sm font-bold text-foreground truncate">
                     {user.display_name || user.username || "Anonymous"}
                   </p>
+                  {(user.points ?? 0) >= CREATOR_THRESHOLD && (
+                    <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-full bg-naija-gold/30 border border-naija-gold/50 px-1.5 py-0.5 text-[9px] font-bold text-yellow-800 dark:text-yellow-400">
+                      <Banknote className="h-2.5 w-2.5" /> Creator
+                    </span>
+                  )}
                   <p className="mt-1 text-base sm:text-lg font-bold text-primary">{(user.points ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">points</p>
                 </div>
@@ -62,8 +75,13 @@ const Leaderboard = () => {
                   <span className="w-6 text-center text-sm font-bold text-muted-foreground">{i + 1}</span>
                   <span className="text-xl">{badges[i] || "⭐"}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">
+                    <p className="text-sm font-bold text-foreground truncate flex items-center gap-1.5">
                       {user.display_name || user.username || "Anonymous"}
+                      {(user.points ?? 0) >= CREATOR_THRESHOLD && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-naija-gold/20 border border-naija-gold/40 px-1.5 py-0.5 text-[9px] font-bold text-yellow-700 dark:text-yellow-400">
+                          <Banknote className="h-2.5 w-2.5" /> Creator
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">{user.comment_count ?? 0} comments</p>
                   </div>

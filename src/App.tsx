@@ -17,6 +17,7 @@ import Trending from "./pages/Trending.tsx";
 import DailyQuiz from "./pages/DailyQuiz.tsx";
 import Reels from "./pages/Reels.tsx";
 import CommunityFeed from "./pages/CommunityFeed.tsx";
+import CreatorStudio from "./pages/CreatorStudio.tsx";
 import InstallAppPrompt from "@/components/InstallAppPrompt";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/creator-studio" element={<CreatorStudio />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
