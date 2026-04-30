@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 import { Trophy, Banknote } from "lucide-react";
 import { useLeaderboard } from "@/hooks/useNews";
 import { Link } from "react-router-dom";
@@ -8,6 +9,12 @@ const CREATOR_THRESHOLD = 5_000_000;
 const badges = ["🏆", "🥈", "🥉", "⭐", "⭐", "⭐", "⭐", "⭐", "⭐", "⭐"];
 
 const Leaderboard = () => {
+  useSEO({
+    title: "Top Contributors Leaderboard",
+    description: "See Nigeria's most active voices on ParrotNG. Earn points by voting, commenting, and debating. Can you reach the top?",
+    canonicalUrl: "https://parrot.com.ng/leaderboard",
+  });
+
   const { data: leaders = [], isLoading } = useLeaderboard();
 
   return (

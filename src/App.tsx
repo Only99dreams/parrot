@@ -17,6 +17,8 @@ import Trending from "./pages/Trending.tsx";
 import DailyQuiz from "./pages/DailyQuiz.tsx";
 import Reels from "./pages/Reels.tsx";
 import CommunityFeed from "./pages/CommunityFeed.tsx";
+import Communities from "./pages/Communities.tsx";
+import Messages from "./pages/Messages.tsx";
 import CreatorStudio from "./pages/CreatorStudio.tsx";
 import InstallAppPrompt from "@/components/InstallAppPrompt";
 
@@ -47,6 +49,8 @@ const App = () => (
             <Route path="/quiz" element={<DailyQuiz />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/community" element={<CommunityFeed />} />
+            <Route path="/communities" element={<Communities />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />

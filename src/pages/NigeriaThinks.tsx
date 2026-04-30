@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 import { BarChart3, TrendingUp, TrendingDown, Minus, Sparkles, MessageSquare, Vote } from "lucide-react";
 import { useNewsArticles } from "@/hooks/useNews";
 import { useMemo } from "react";
@@ -37,6 +38,12 @@ function deriveSentiment(totalVotes: number, totalComments: number, articleCount
 }
 
 const NigeriaThinks = () => {
+  useSEO({
+    title: "Nigeria Thinks — National Sentiment Dashboard",
+    description: "Real-time sentiment analysis across Nigerian news categories. See what the nation thinks about politics, economy, security, and more.",
+    canonicalUrl: "https://parrot.com.ng/nigeria-thinks",
+  });
+
   const { data: articles = [], isLoading } = useNewsArticles();
 
   const categoryData = useMemo<CategorySentiment[]>(() => {

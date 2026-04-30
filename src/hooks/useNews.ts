@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -59,29 +60,40 @@ export interface Comment {
 }
 
 export function useNewsArticles() {
+  const queryClient = useQueryClient();
+
+  // Auto-refresh the feed whenever a new article is published.
+  // Use a unique channel name per mount so React StrictMode's double-invoke
+  // doesn't try to add listeners to an already-subscribed channel instance.
+  useEffect(() => {
+    const channelName = `news_articles_realtime_${Math.random().toString(36).slice(2)}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "news_articles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["news_articles"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["news_articles"],
     queryFn: async () => {
-      const { data: articles, error } = await supabase
+      const { data, error } = await supabase
         .from("news_articles")
-        .select("*")
+        .select("*, poll_options(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-
-      // Fetch poll options for all articles
-      const articleIds = articles.map((a) => a.id);
-      let options: any[] = [];
-      if (articleIds.length > 0) {
-        const { data } = await supabase
-          .from("poll_options")
-          .select("*")
-          .in("article_id", articleIds);
-        options = data || [];
-      }
-
-      return articles.map((article) => ({
+      return (data || []).map((article) => ({
         ...article,
-        poll_options: options.filter((o) => o.article_id === article.id),
+        poll_options: article.poll_options || [],
       })) as NewsArticle[];
     },
   });
@@ -93,17 +105,12 @@ export function useNewsArticle(id: string) {
     queryFn: async () => {
       const { data: article, error } = await supabase
         .from("news_articles")
-        .select("*")
+        .select("*, poll_options(*)")
         .eq("id", id)
         .single();
       if (error) throw error;
 
-      const { data: options } = await supabase
-        .from("poll_options")
-        .select("*")
-        .eq("article_id", id);
-
-      return { ...article, poll_options: options || [] } as NewsArticle;
+      return { ...article, poll_options: article.poll_options || [] } as NewsArticle;
     },
     enabled: !!id,
   });

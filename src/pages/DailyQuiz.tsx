@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSEO } from "@/hooks/useSEO";
 import Header from "@/components/Header";
 import { useDailyQuiz } from "@/hooks/useDailyQuiz";
 import { useStreak } from "@/hooks/useStreak";
@@ -7,6 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
 
 const DailyQuiz = () => {
+  useSEO({
+    title: "Daily Nigeria Quiz",
+    description: "Test your knowledge on Nigerian news, history, politics, and culture. Play the free daily quiz on ParrotNG.",
+    canonicalUrl: "https://parrot.com.ng/quiz",
+  });
+
   const { questions, answers, score, completed, totalQuizzesTaken, bestScore, loading, answer } = useDailyQuiz();
   const { currentStreak } = useStreak();
   const { toast } = useToast();

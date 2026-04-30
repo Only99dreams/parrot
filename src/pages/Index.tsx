@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSEO } from "@/hooks/useSEO";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import PostCard, { UserPost } from "@/components/PostCard";
@@ -26,6 +27,24 @@ const FEED_PAGE_SIZE = 8;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 const Index = () => {
+  useSEO({
+    title: "Nigerian News, Polls & Debates",
+    description: "Stay ahead with trending Nigerian news, live polls, and real debates. Vote on the issues that matter most to Nigerians today.",
+    canonicalUrl: "https://parrot.com.ng/",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "ParrotNG",
+      url: "https://parrot.com.ng",
+      description: "Nigeria's home for real-time news polls, debates, and community discussion.",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: "https://parrot.com.ng/?q={search_term_string}" },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  });
+
   const { data: articles, isLoading, refetch: refetchArticles } = useNewsArticles();
   const { user } = useAuth();
   const [category, setCategory] = useState("");

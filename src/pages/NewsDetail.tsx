@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Flame, MessageSquare, Lightbulb, Users, Sparkles } from "lucide-react";
+import { useSEO } from "@/hooks/useSEO";
 import SocialShare from "@/components/SocialShare";
 import StoryReactions from "@/components/StoryReactions";
 import LiveDiscussion from "@/components/LiveDiscussion";
@@ -23,13 +24,40 @@ const NewsDetail = () => {
   const { toast } = useToast();
   const { markRead } = useReadingHistory();
 
+  useSEO({
+    title: article?.headline,
+    description: article?.summary ?? undefined,
+    ogType: "article",
+    ogImage: article?.image_url ?? undefined,
+    canonicalUrl: article ? `https://parrot.com.ng/news/${article.id}` : undefined,
+    publishedTime: article?.created_at,
+    articleSection: article?.category,
+    jsonLd: article
+      ? {
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          headline: article.headline,
+          description: article.summary,
+          datePublished: article.created_at,
+          articleSection: article.category,
+          publisher: {
+            "@type": "Organization",
+            name: "ParrotNG",
+            logo: { "@type": "ImageObject", url: "https://parrot.com.ng/newlogo.png" },
+          },
+          author: { "@type": "Organization", name: article.source || "ParrotNG" },
+          mainEntityOfPage: { "@type": "WebPage", "@id": `https://parrot.com.ng/news/${article.id}` },
+          ...(article.image_url ? { image: article.image_url } : {}),
+        }
+      : null,
+  });
+
   useEffect(() => {
     if (article) {
-      document.title = `${article.headline} — ParrotNG`;
       markRead(article.id, article.category, article.headline);
     }
-    return () => { document.title = "ParrotNG — What Nigerians Really Think"; };
-  }, [article]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [article?.id]);
 
   if (isLoading) {
     return (

@@ -1,11 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, BellRing } from "lucide-react";
+import { Bell, BellRing, MessageCircle, Users, Newspaper } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+
+function notificationIcon(type: string) {
+  if (type === "new_message") return <MessageCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />;
+  if (type === "community_post") return <Users className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />;
+  return <Newspaper className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />;
+}
+
+function notificationHref(type: string, articleId: string | null) {
+  if (type === "new_message") return "/messages";
+  if (type === "community_post") return "/communities";
+  if (articleId) return `/news/${articleId}`;
+  return "/";
+}
 
 const NotificationBell = () => {
   const { notifications, unreadCount, markAllRead } = useNotifications();
@@ -51,17 +64,20 @@ const NotificationBell = () => {
             notifications.map((n) => (
               <Link
                 key={n.id}
-                to={n.article_id ? `/news/${n.article_id}` : "/"}
+                to={notificationHref(n.type, n.article_id)}
                 onClick={() => setOpen(false)}
-                className={`block border-b border-border px-4 py-3 transition-colors hover:bg-muted/50 ${
+                className={`flex items-start gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-muted/50 ${
                   !n.is_read ? "bg-primary/5" : ""
                 }`}
               >
-                <p className="text-sm font-medium text-foreground">{n.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.message}</p>
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                </p>
+                {notificationIcon(n.type)}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">{n.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.message}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                  </p>
+                </div>
               </Link>
             ))
           )}

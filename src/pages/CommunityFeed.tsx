@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSEO } from "@/hooks/useSEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CreatePost from "@/components/CreatePost";
@@ -8,6 +9,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Users } from "lucide-react";
 
 export default function CommunityFeed() {
+  useSEO({
+    title: "Community Feed — Nigerian Voices",
+    description: "Read posts from Nigerians across the country. Share your thoughts, spark debates, and join the conversation on ParrotNG.",
+    canonicalUrl: "https://parrot.com.ng/community",
+  });
+
   const { user } = useAuth();
   const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 import { useNewsArticles } from "@/hooks/useNews";
 import { Flame, BarChart3, MessageSquare, TrendingUp, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -8,6 +9,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Trending = () => {
+  useSEO({
+    title: "Trending in Nigeria",
+    description: "The hottest stories, polls, and debates sweeping Nigeria right now. See what Nigerians are voting on today.",
+    canonicalUrl: "https://parrot.com.ng/trending",
+  });
+
   const { data: articles = [] } = useNewsArticles();
   const [categoryStats, setCategoryStats] = useState<{ category: string; count: number; votes: number; comments: number }[]>([]);
 

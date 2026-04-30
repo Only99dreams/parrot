@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Notification {
   id: string;
@@ -33,7 +34,10 @@ export interface UserBadge {
 
 export function useNotifications() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [realtime, setRealtime] = useState<Notification[]>([]);
+  // Skip toast on the initial batch loaded from DB
+  const initialLoadDone = useRef(false);
 
   const query = useQuery({
     queryKey: ["notifications", user?.id],
@@ -46,6 +50,7 @@ export function useNotifications() {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
+      initialLoadDone.current = true;
       return data as Notification[];
     },
     enabled: !!user,
@@ -62,7 +67,12 @@ export function useNotifications() {
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (!cancelled) {
-            setRealtime((prev) => [payload.new as Notification, ...prev]);
+            const n = payload.new as Notification;
+            setRealtime((prev) => [n, ...prev]);
+            // Show a toast for genuinely new incoming notifications
+            if (initialLoadDone.current) {
+              toast({ title: n.title, description: n.message });
+            }
           }
         }
       )
@@ -163,7 +173,7 @@ export function useUserProfile(userId?: string) {
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: { display_name?: string; username?: string } }) => {
+    mutationFn: async ({ userId, updates }: { userId: string; updates: { display_name?: string | null; username?: string | null; avatar_url?: string | null } }) => {
       const { data, error } = await supabase
         .from("profiles")
         .update(updates)

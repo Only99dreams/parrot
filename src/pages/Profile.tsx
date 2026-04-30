@@ -14,11 +14,12 @@ import {
 } from "@/hooks/useNotifications";
 import { useStreak } from "@/hooks/useStreak";
 import { useReadingHistory } from "@/hooks/useReadingHistory";
+import { useMyReferralCode, useMyReferrals } from "@/hooks/useReferral";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Vote, Award, Star, Pencil, Check, X, Flame, BookOpen, Banknote, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { MessageSquare, Vote, Award, Star, Pencil, Check, X, Flame, BookOpen, Banknote, ChevronRight, Copy, Users, Camera, Share2, Gift } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -34,6 +35,8 @@ const Profile = () => {
   const updateProfile = useUpdateProfile();
   const { currentStreak, longestStreak, totalPoints: streakPoints } = useStreak();
   const { totalRead, topCategories, history: readingHistory } = useReadingHistory();
+  const { data: referralCode } = useMyReferralCode();
+  const { data: referrals = [] } = useMyReferrals();
   const { toast } = useToast();
 
   const [editing, setEditing] = useState(false);
@@ -41,6 +44,49 @@ const Profile = () => {
   const [editUsername, setEditUsername] = useState("");
   const [myPosts, setMyPosts] = useState<UserPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Please upload a JPG, PNG, WebP or GIF image", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be under 5 MB", variant: "destructive" });
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+      await updateProfile.mutateAsync({
+        userId: user.id,
+        updates: { avatar_url: publicUrl },
+      });
+      toast({ title: "Profile photo updated! 📸" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+      // reset so same file can be re-picked
+      e.target.value = "";
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -113,8 +159,39 @@ const Profile = () => {
         {/* Profile Header */}
         <div className="mb-4 sm:mb-6 rounded-xl border border-border bg-card p-4 sm:p-6">
           <div className="flex items-start gap-3 sm:gap-4">
-            <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full gradient-naija text-xl sm:text-2xl font-bold text-primary-foreground flex-shrink-0">
-              {avatarLetter}
+            {/* Avatar with upload */}
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="group relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full overflow-hidden gradient-naija focus:outline-none"
+                title="Change profile photo"
+              >
+                {(profile as unknown as { avatar_url?: string })?.avatar_url ? (
+                  <img
+                    src={(profile as unknown as { avatar_url?: string }).avatar_url}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl sm:text-2xl font-bold text-primary-foreground">{avatarLetter}</span>
+                )}
+                {/* Camera overlay */}
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {avatarUploading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Camera className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </div>
             <div className="flex-1 min-w-0">
               {editing ? (
@@ -268,6 +345,73 @@ const Profile = () => {
           })()}
         </div>
 
+        {/* ── REFERRAL BANNER (always visible) ── */}
+        <div className="mb-4 sm:mb-6 rounded-xl border-2 border-naija-gold bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Gift className="h-5 w-5 text-naija-gold flex-shrink-0" />
+            <h2 className="font-display font-bold text-base text-foreground">Refer &amp; Earn</h2>
+            <span className="rounded-full bg-naija-gold px-2 py-0.5 text-[10px] font-bold text-black uppercase tracking-wide">1,000 pts per friend</span>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            Share your code — every friend who signs up earns you <span className="font-bold text-foreground">1,000 points</span> instantly. No limit!
+          </p>
+
+          {/* Code display */}
+          {referralCode ? (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 rounded-lg border-2 border-naija-gold bg-white dark:bg-black/20 px-4 py-2.5 font-mono text-2xl font-black text-foreground tracking-[0.3em] text-center select-all">
+                  {referralCode}
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode);
+                    toast({ title: "Referral code copied! 📋" });
+                  }}
+                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-naija-gold bg-white dark:bg-black/20 hover:bg-yellow-50 transition-colors"
+                  title="Copy code"
+                >
+                  <Copy className="h-5 w-5 text-naija-gold" />
+                </button>
+              </div>
+
+              {/* Share link button */}
+              <button
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/auth?ref=${referralCode}`;
+                  if (navigator.share) {
+                    navigator.share({
+                      title: "Join me on ParrotNG!",
+                      text: `Use my referral code ${referralCode} and we both win — sign up at ParrotNG 🇳🇬`,
+                      url: shareUrl,
+                    }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(shareUrl);
+                    toast({ title: "Referral link copied! 🔗" });
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-naija-gold py-2.5 text-sm font-bold text-black hover:bg-yellow-400 transition-colors"
+              >
+                <Share2 className="h-4 w-4" /> Share Referral Link
+              </button>
+
+              {/* Stats strip */}
+              <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-lg bg-white/60 dark:bg-white/10 py-2">
+                  <p className="text-xl font-black text-foreground">{referrals.length}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Friends Referred</p>
+                </div>
+                <div className="rounded-lg bg-white/60 dark:bg-white/10 py-2">
+                  <p className="text-xl font-black text-primary">{(referrals.length * 1000).toLocaleString()}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Points Earned</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="h-12 animate-pulse rounded-lg bg-muted" />
+          )}
+        </div>
+
         {/* Badges */}
         <div className="mb-4 sm:mb-6 rounded-xl border border-border bg-card p-3 sm:p-5">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-foreground">
@@ -301,6 +445,7 @@ const Profile = () => {
             <TabsTrigger value="votes">Vote History</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
             <TabsTrigger value="reading">Reading History</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
@@ -408,6 +553,61 @@ const Profile = () => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="referrals">
+            {/* Referral code card */}
+            <div className="mb-4 rounded-xl border border-border bg-card p-4">
+              <h3 className="font-semibold text-sm text-foreground mb-1 flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> Your Referral Code
+              </h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Share your code and earn <span className="font-semibold text-primary">1,000 points</span> for every person who signs up!
+              </p>
+              {referralCode ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg bg-muted px-4 py-2.5 font-mono text-lg font-bold text-foreground tracking-widest text-center">
+                    {referralCode}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(referralCode);
+                      toast({ title: "Copied! 📋" });
+                    }}
+                    className="rounded-lg border border-border p-2.5 hover:bg-muted transition-colors"
+                    title="Copy code"
+                  >
+                    <Copy className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading code…</p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground text-center">
+                Total referrals: <span className="font-semibold text-foreground">{referrals.length}</span> &nbsp;·&nbsp;
+                Points earned: <span className="font-semibold text-primary">{(referrals.length * 1000).toLocaleString()}</span>
+              </p>
+            </div>
+
+            {/* Referral list */}
+            {referrals.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No referrals yet. Share your code to earn points!</p>
+            ) : (
+              <div className="space-y-2">
+                {referrals.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {r.referred_profile?.display_name || r.referred_profile?.username || "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</p>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">+1,000 pts</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
         </Tabs>
       </main>
       <Footer />

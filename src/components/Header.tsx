@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { TrendingUp, MessageSquare, BarChart3, Menu, X, LogIn, LogOut, User, Flame, Sun, Moon, Brain, Clapperboard, Users } from "lucide-react";
+import { TrendingUp, MessageSquare, BarChart3, Menu, X, LogIn, LogOut, User, Flame, Sun, Moon, Brain, Clapperboard, Users, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,12 @@ const navItems = [
   { to: "/quiz", label: "Quiz", icon: Brain },
   { to: "/reels", label: "Reels", icon: Clapperboard },
   { to: "/community", label: "Community", icon: Users },
+  { to: "/communities", label: "Groups", icon: Users },
   { to: "/leaderboard", label: "Leaderboard", icon: MessageSquare },
+];
+
+const authNavItems = [
+  { to: "/messages", label: "Messages", icon: MessageCircle },
 ];
 
 const Header = () => {
@@ -64,6 +69,14 @@ const Header = () => {
           {user ? (
             <div className="flex items-center gap-1">
               <CreatePost />
+              <Link
+                to="/messages"
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  location.pathname === "/messages" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <MessageCircle className="h-4 w-4" /> Messages
+              </Link>
               <Link
                 to="/profile"
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -115,6 +128,10 @@ const Header = () => {
           })}
           {user ? (
             <>
+              <Link to="/messages" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted">
+                <MessageCircle className="h-4 w-4" /> Messages
+              </Link>
               <Link to="/profile" onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted">
                 <User className="h-4 w-4" /> Profile
